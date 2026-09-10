@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B2540;
+    --ink-soft:#173657;
+    --crimson:#E63950;
+    --crimson-deep:#C42540;
+    --parchment:#F6F1E7;
+    --paper:#FCFAF4;
+    --cobalt:#2C5AA0;
+    --sand:#DCD2BC;
+    --moss:#3F7D5C;
+    --ink-text:#20262E;
+    --muted:#6B6459;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--parchment);
+    color:var(--ink-text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Barlow Condensed',sans-serif;font-weight:700;}
+  a{color:var(--cobalt);}
+
+  /* ---------- App shell ---------- */
+  #app{display:flex;min-height:100vh;}
+
+  /* Tab rail */
+  #rail{
+    width:216px;
+    flex-shrink:0;
+    background:var(--ink);
+    color:#F6F1E7;
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  #rail .brand{
+    padding:22px 20px 14px 20px;
+    border-bottom:1px solid rgba(246,241,231,0.14);
+  }
+  #rail .brand .kicker{
+    font-size:11px;letter-spacing:0.06em;color:#9FB3C8;margin-bottom:2px;
+  }
+  #rail .brand input{
+    background:transparent;border:none;color:#fff;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;
+    padding:0;width:100%;
+  }
+  #rail .brand input:focus{outline:none;border-bottom:1px solid var(--crimson);}
+  nav.primary{padding:10px 10px;display:flex;flex-direction:column;gap:2px;}
+  nav.primary button{
+    all:unset;cursor:pointer;
+    padding:10px 12px;border-radius:8px;
+    font-size:15px;font-weight:500;color:#D8E0EA;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  nav.primary button:hover{background:rgba(246,241,231,0.08);}
+  nav.primary button.active{background:rgba(230,57,80,0.16);color:#fff;box-shadow:inset 3px 0 0 var(--crimson);}
+  nav.primary button .count{font-size:12px;color:#9FB3C8;}
+
+  .substrip{
+    padding:2px 10px 14px 10px;
+    display:flex;flex-wrap:wrap;gap:6px;
+  }
+  .substrip button{
+    all:unset;cursor:pointer;
+    min-width:34px;text-align:center;
+    padding:6px 8px;border-radius:6px;
+    font-size:13px;color:#B9C6D4;
+    background:rgba(246,241,231,0.06);
+  }
+  .substrip button.active{background:var(--crimson);color:#fff;font-weight:600;}
+  .substrip button.filled::after{content:"";}
+  .substrip.months button{min-width:56px;}
+  .substrip.weeks button{min-width:40px;}
+
+  #rail .foot{
+    margin-top:auto;padding:14px 16px 18px 16px;
+    display:flex;flex-direction:column;gap:8px;
+    border-top:1px solid rgba(246,241,231,0.14);
+  }
+  #rail .foot button{
+    all:unset;cursor:pointer;font-size:13px;color:#B9C6D4;
+    padding:6px 4px;
+  }
+  #rail .foot button:hover{color:#fff;}
+  #save-indicator{font-size:11px;color:#7FA48A;min-height:14px;}
+
+  /* Main area */
+  main{flex:1;min-width:0;}
+  .page-header{
+    background:var(--ink);
+    color:#fff;
+    padding:26px 40px 22px 40px;
+    position:relative;
+  }
+  .page-header::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--crimson);
+  }
+  .page-header .eyebrow{color:#9FB3C8;font-size:13px;margin-bottom:4px;}
+  .page-header h1{font-size:34px;margin:0;line-height:1;}
+  .content{max-width:920px;margin:0 auto;padding:32px 40px 80px 40px;}
+
+  section.block{
+    background:var(--paper);
+    border:1px solid var(--sand);
+    border-radius:var(--radius);
+    padding:22px 24px;
+    margin-bottom:20px;
+  }
+  section.block h3{
+    font-size:20px;color:var(--cobalt);margin:0 0 4px 0;
+  }
+  section.block .hint{color:var(--muted);font-size:13px;margin:0 0 14px 0;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:720px){.two-col{grid-template-columns:1fr;}}
+
+  label.field-label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  input.f-input, textarea.f-textarea, input.f-date{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    padding:9px 10px;
+    border:1px solid var(--sand);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink-text);
+  }
+  input.f-input:focus, textarea.f-textarea:focus, input.f-date:focus{
+    outline:none;border-color:var(--cobalt);box-shadow:0 0 0 3px rgba(44,90,160,0.12);
+  }
+  textarea.f-textarea{resize:vertical;min-height:70px;}
+  .field{margin-bottom:14px;}
+  .row-fields{display:grid;gap:14px;}
+
+  .checkline{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .checkline input[type=checkbox]{width:18px;height:18px;accent-color:var(--crimson);flex-shrink:0;}
+  .checkline input.f-input{flex:1;}
+
+  table.plan-table{width:100%;border-collapse:collapse;margin-top:4px;}
+  table.plan-table th{
+    background:var(--cobalt);color:#fff;font-size:12px;text-align:left;
+    padding:8px 8px;font-weight:600;
+  }
+  table.plan-table td{
+    border-bottom:1px solid var(--sand);padding:6px;vertical-align:middle;
+  }
+  table.plan-table td.idx{color:var(--muted);font-size:13px;text-align:center;width:26px;}
+  table.plan-table td.chk{text-align:center;width:40px;}
+  table.plan-table input.f-input{border:none;background:transparent;padding:6px 4px;}
+  table.plan-table input.f-input:focus{background:#fff;border:1px solid var(--cobalt);}
+  table.plan-table input[type=date]{font-size:13px;color:var(--muted);}
+  table.plan-table td.step-col{min-width:180px;}
+
+  .callout{
+    border:1.5px solid var(--crimson);background:#FDEEF0;border-radius:8px;
+    padding:14px 16px;margin:18px 0;
+  }
+  .callout .field-label{color:var(--crimson-deep);}
+
+  .week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px;}
+  @media (max-width:600px){.week-grid{grid-template-columns:repeat(2,1fr);}}
+  .week-cell{border:1px solid var(--sand);border-radius:8px;padding:10px;background:#fff;}
+  .week-cell .checkline{margin-bottom:6px;}
+  .week-cell input.f-input{font-size:13px;}
+
+  .habit-wrap{overflow-x:auto;margin-top:8px;border:1px solid var(--sand);border-radius:8px;}
+  table.habit-table{border-collapse:collapse;font-size:12px;min-width:100%;}
+  table.habit-table th{color:var(--muted);font-weight:600;padding:4px 3px;text-align:center;background:var(--parchment);position:sticky;top:0;}
+  table.habit-table td{padding:3px;text-align:center;border-top:1px solid #EFE9DC;}
+  table.habit-table td.habit-name{text-align:left;padding-left:8px;min-width:140px;}
+  table.habit-table td.habit-name input{font-size:13px;border:none;background:transparent;width:100%;padding:4px 2px;}
+  table.habit-table td.habit-name input:focus{background:#fff;border:1px solid var(--cobalt);border-radius:4px;}
+  table.habit-table input[type=checkbox]{width:15px;height:15px;accent-color:var(--moss);}
+
+  .weeks-note-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px;}
+  @media (max-width:700px){.weeks-note-grid{grid-template-columns:repeat(2,1fr);}}
+  .weeks-note-grid .wk-box{border:1px solid var(--sand);border-radius:8px;padding:10px;background:#fff;}
+  .weeks-note-grid .wk-box .field-label{color:var(--cobalt);}
+
+  .progress-bar{height:8px;background:var(--sand);border-radius:4px;overflow:hidden;margin-top:6px;}
+  .progress-bar > span{display:block;height:100%;background:var(--moss);}
+
+  /* Overview */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  @media (max-width:720px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{background:var(--paper);border:1px solid var(--sand);border-radius:var(--radius);padding:16px 18px;}
+  .stat-card .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:32px;color:var(--ink);line-height:1;}
+  .stat-card .lbl{font-size:12.5px;color:var(--muted);margin-top:4px;}
+
+  .grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+  .mini-card{
+    background:var(--paper);border:1px solid var(--sand);border-radius:8px;
+    padding:14px 16px;cursor:pointer;text-align:left;
+  }
+  .mini-card:hover{border-color:var(--cobalt);}
+  .mini-card .mc-title{font-weight:600;font-size:14.5px;color:var(--ink);margin-bottom:2px;}
+  .mini-card .mc-sub{font-size:12.5px;color:var(--muted);}
+
+  /* ---------- Dashboard ---------- */
+  .hero{
+    background:linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+    border-radius:14px;color:#fff;padding:26px 28px;margin-bottom:20px;
+    display:flex;align-items:center;gap:26px;flex-wrap:wrap;position:relative;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle, rgba(230,57,80,0.35), transparent 70%);
+  }
+  .ring{
+    width:96px;height:96px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(var(--crimson) calc(var(--pct)*1%), rgba(255,255,255,0.16) 0);
+    display:flex;align-items:center;justify-content:center;position:relative;z-index:1;
+  }
+  .ring .ring-inner{
+    width:74px;height:74px;border-radius:50%;background:var(--ink-soft);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .ring .ring-inner .pct{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;line-height:1;}
+  .ring .ring-inner .pct-lbl{font-size:9.5px;color:#B9C6D4;margin-top:2px;}
+  .hero-text{position:relative;z-index:1;flex:1;min-width:200px;}
+  .hero-text .hero-kicker{font-size:13px;color:#9FB3C8;margin-bottom:2px;}
+  .hero-text h2{margin:0 0 6px 0;font-size:26px;}
+  .hero-text p{margin:0;font-size:14px;color:#D8E0EA;max-width:46ch;}
+
+  .ring-sm{
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(var(--moss) calc(var(--pct)*1%), var(--sand) 0);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ring-sm .ring-sm-inner{
+    width:36px;height:36px;border-radius:50%;background:var(--paper);
+    display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:var(--ink);
+  }
+
+  .today-card{
+    display:flex;align-items:center;gap:16px;background:var(--paper);
+    border:1.5px solid var(--crimson);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;
+  }
+  .today-card .tc-badge{
+    background:var(--crimson);color:#fff;font-size:11px;font-weight:700;
+    padding:4px 10px;border-radius:20px;white-space:nowrap;
+  }
+  .today-card .tc-body{flex:1;min-width:0;}
+  .today-card .tc-title{font-weight:600;font-size:15px;color:var(--ink);}
+  .today-card .tc-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+  .today-card .tc-arrow{color:var(--crimson);font-size:20px;flex-shrink:0;}
+
+  .goal-card{
+    background:var(--paper);border:1px solid var(--sand);border-radius:10px;
+    padding:14px 16px;cursor:pointer;text-align:left;display:flex;gap:12px;align-items:center;
+  }
+  .goal-card:hover{border-color:var(--cobalt);}
+  .goal-card .gc-body{flex:1;min-width:0;}
+  .goal-card .mc-title{font-weight:600;font-size:14px;color:var(--ink);margin-bottom:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .goal-card .mc-sub{font-size:12px;color:var(--muted);}
+
+  .quarter-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media (max-width:720px){.quarter-strip{grid-template-columns:repeat(2,1fr);}}
+  .quarter-card{
+    background:var(--paper);border:1px solid var(--sand);border-radius:10px;padding:14px;
+    cursor:pointer;text-align:left;
+  }
+  .quarter-card:hover{border-color:var(--cobalt);}
+  .quarter-card .q-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;color:var(--ink);}
+  .quarter-card .q-focus{font-size:11.5px;color:var(--muted);margin-bottom:8px;}
+
+  .heatmap{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  @media (max-width:640px){.heatmap{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:420px){.heatmap{grid-template-columns:repeat(2,1fr);}}
+  .heat-tile{
+    border-radius:8px;padding:12px 10px;cursor:pointer;text-align:left;border:1px solid var(--sand);
+    color:#fff;
+  }
+  .heat-tile .ht-name{font-weight:600;font-size:13.5px;}
+  .heat-tile .ht-sub{font-size:11px;opacity:0.85;margin-top:2px;}
+
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ---------- Completion celebration ---------- */
+  .celebrate-overlay{
+    position:fixed;inset:0;background:rgba(11,37,64,0.55);
+    display:flex;align-items:center;justify-content:center;z-index:1000;
+    padding:20px;
+  }
+  .celebrate-overlay.hidden{display:none;}
+  .celebrate-box{
+    background:var(--paper);border-radius:16px;padding:32px 28px;max-width:360px;width:100%;
+    text-align:center;position:relative;overflow:hidden;
+    box-shadow:0 20px 60px rgba(11,37,64,0.35);
+    animation:pop-in 0.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop-in{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .celebrate-box .cb-emoji{font-size:44px;margin-bottom:8px;}
+  .celebrate-box h2{margin:0 0 8px 0;color:var(--ink);font-size:24px;}
+  .celebrate-box p{margin:0 0 20px 0;color:var(--muted);font-size:14px;}
+  .celebrate-box button{
+    all:unset;cursor:pointer;background:var(--crimson);color:#fff;font-weight:600;
+    padding:10px 26px;border-radius:24px;font-size:14px;
+  }
+  .celebrate-box button:hover{background:var(--crimson-deep);}
+  .confetti-piece{
+    position:absolute;top:-10px;width:8px;height:14px;opacity:0.9;pointer-events:none;
+    animation:confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall{
+    to{transform:translateY(420px) rotate(540deg);opacity:0;}
+  }
+
+  /* Mobile rail */
+  @media (max-width:860px){
+    #app{flex-direction:column;}
+    #rail{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;overflow:visible;}
+    #rail .brand{flex-basis:100%;border-bottom:none;padding:16px 16px 6px 16px;}
+    nav.primary{flex-direction:row;overflow-x:auto;flex-basis:100%;padding:4px 10px;-webkit-overflow-scrolling:touch;}
+    nav.primary button{white-space:nowrap;flex-shrink:0;}
+    .substrip{flex-basis:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+    .substrip button{flex-shrink:0;}
+    #rail .foot{flex-basis:100%;flex-direction:row;justify-content:space-between;flex-wrap:wrap;border-top:1px solid rgba(246,241,231,0.14);}
+    .page-header{padding:18px 18px 16px 18px;}
+    .page-header h1{font-size:26px;}
+    .content{padding:18px 14px 50px 14px;}
+    .hero{padding:20px;gap:16px;}
+    .hero-text h2{font-size:21px;}
+  }
+  @media (max-width:520px){
+    .stat-row{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .stat-card{padding:12px 14px;}
+    .stat-card .num{font-size:26px;}
+    .week-grid{grid-template-columns:1fr 1fr;}
+    .weeks-note-grid{grid-template-columns:1fr;}
+    .quarter-strip{grid-template-columns:1fr 1fr;}
+    section.block{padding:16px 16px;}
+    .two-col{gap:14px;}
+    .hero{flex-direction:column;align-items:flex-start;text-align:left;}
+    table.plan-table td, table.plan-table th{padding:7px 5px;font-size:13px;}
+    .checkline input[type=checkbox]{width:20px;height:20px;}
+    table.habit-table input[type=checkbox]{width:17px;height:17px;}
+  }
+  @media (max-width:380px){
+    .stat-row{grid-template-columns:1fr 1fr;}
+    .week-grid{grid-template-columns:1fr;}
+    .quarter-strip{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="rail">
+    <div class="brand">
+      <div class="kicker">Planning year</div>
+      <input id="year-input" placeholder="e.g. Sept 2026 – Aug 2027" />
+    </div>
+    <nav class="primary" id="primary-nav"></nav>
+    <div class="substrip" id="substrip"></div>
+    <div class="foot">
+      <button id="btn-export">Export backup (.json)</button>
+      <button id="btn-import">Import backup</button>
+      <button id="btn-reset">Reset all data</button>
+      <div id="save-indicator"></div>
+    </div>
+  </div>
+  <main>
+    <div class="page-header">
+      <div class="eyebrow" id="pg-eyebrow">Overview</div>
+      <h1 id="pg-title">Your year, planned</h1>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+<div id="celebrate-overlay" class="celebrate-overlay hidden">
+  <div class="celebrate-box" id="celebrate-box">
+    <div class="cb-emoji" id="celebrate-emoji">🎉</div>
+    <h2 id="celebrate-title">Nice work!</h2>
+    <p id="celebrate-message">You just completed something.</p>
+    <button id="celebrate-dismiss">Keep going</button>
+  </div>
+</div>
+<input type="file" id="file-import" accept="application/json" style="display:none">
+
+<script>
+/* ---------------- Data model ---------------- */
+const MONTHS = [
+  {name:'September', q:0, days:30},{name:'October', q:0, days:31},{name:'November', q:0, days:30},
+  {name:'December', q:1, days:31},{name:'January', q:1, days:31},{name:'February', q:1, days:28},
+  {name:'March', q:2, days:31},{name:'April', q:2, days:30},{name:'May', q:2, days:31},
+  {name:'June', q:3, days:30},{name:'July', q:3, days:31},{name:'August', q:3, days:31},
+];
+const QUARTERS = [
+  {label:'Q1', focus:'September, October, November'},
+  {label:'Q2', focus:'December, January, February'},
+  {label:'Q3', focus:'March, April, May'},
+  {label:'Q4', focus:'June, July, August'},
+];
+// 52 weeks distributed across the 12 months (last month of each quarter gets 5 weeks)
+const WEEKS_PER_MONTH = MONTHS.map((m,i)=> ((i+1)%3===0) ? 5 : 4);
+const WEEKS = [];
+(function buildWeeks(){
+  let wk = 1;
+  WEEKS_PER_MONTH.forEach((count, mi)=>{
+    for(let w=1; w<=count; w++){
+      WEEKS.push({num:wk, month:mi, weekInMonth:w});
+      wk++;
+    }
+  });
+})();
+const STORAGE_KEY = 'year-planner-data';
+
+function emptyGoal(){
+  return {
+    nickname:'', goalText:'', deadline:'', why:'',
+    steps: Array.from({length:8},()=>({step:'',start:'',target:'',done:false})),
+    firstAction:'',
+    weeks: Array.from({length:12},()=>({done:false, note:''}))
+  };
+}
+function emptyQuarter(){
+  return {
+    businessGoals: Array.from({length:4},()=>({text:'',done:false})),
+    personalGoals: Array.from({length:4},()=>({text:'',done:false})),
+    budget: Array.from({length:4},()=>({category:'',planned:'',actual:''})),
+    worked:'', change:''
+  };
+}
+function emptyMonth(days){
+  return {
+    priorities: Array.from({length:5},()=>({text:'',done:false})),
+    budget: Array.from({length:4},()=>({category:'',budget:'',spent:''})),
+    habits: Array.from({length:5},()=>({name:'', days: Array.from({length:days},()=>false)})),
+    weeks: ['', '', '', ''],
+    notes:''
+  };
+}
+function emptyWeek(){
+  return {
+    top3: Array.from({length:3},()=>({text:'',done:false})),
+    note:'',
+    done:false
+  };
+}
+function defaultState(){
+  return {
+    year:'',
+    goals: Array.from({length:10},()=>emptyGoal()),
+    quarters: Array.from({length:4},()=>emptyQuarter()),
+    months: MONTHS.map(m=>emptyMonth(m.days)),
+    weeks: Array.from({length:WEEKS.length},()=>emptyWeek())
+  };
+}
+
+let state = defaultState();
+let view = {tab:'overview', index:0};
+let saveTimer = null;
+
+/* ---------------- Persistence (localStorage — saves permanently in this browser) ---------------- */
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const loaded = JSON.parse(raw);
+      state = Object.assign(defaultState(), loaded);
+    }
+  }catch(e){
+    // no saved data yet, or storage unavailable - use defaults
+  }
+  render();
+}
+function scheduleSave(){
+  const ind = document.getElementById('save-indicator');
+  if(ind) ind.textContent = 'Saving…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if(ind) ind.textContent = 'Saved to this browser';
+      setTimeout(()=>{ if(ind && ind.textContent==='Saved to this browser') ind.textContent=''; }, 2500);
+    }catch(e){
+      if(ind) ind.textContent = 'Could not save — storage may be full or blocked';
+    }
+  }, 400);
+}
+
+/* ---------------- Path helpers ---------------- */
+function getPath(obj, path){
+  return path.split('.').reduce((o,k)=> (o==null?undefined:o[k]), obj);
+}
+function setPath(obj, path, value){
+  const keys = path.split('.');
+  let cur = obj;
+  for(let i=0;i<keys.length-1;i++){ cur = cur[keys[i]]; }
+  cur[keys[keys.length-1]] = value;
+}
+function esc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ---------------- Field builders ---------------- */
+function fInput(path, value, placeholder, type){
+  type = type || 'text';
+  return `<input class="f-input" type="${type}" data-path="${path}" value="${esc(value)}" placeholder="${esc(placeholder||'')}">`;
+}
+function fTextarea(path, value, placeholder, rows){
+  return `<textarea class="f-textarea" data-path="${path}" rows="${rows||3}" placeholder="${esc(placeholder||'')}">${esc(value)}</textarea>`;
+}
+function fCheck(path, checked){
+  return `<input type="checkbox" class="f-check" data-path="${path}" ${checked?'checked':''}>`;
+}
+function fieldBlock(labelText, innerHtml){
+  return `<div class="field"><label class="field-label">${esc(labelText)}</label>${innerHtml}</div>`;
+}
+
+/* ---------------- Renderers ---------------- */
+function renderNav(){
+  const nav = document.getElementById('primary-nav');
+  const tabs = [
+    {id:'overview', label:'Overview'},
+    {id:'goals', label:'Goals', count: state.goals.filter(g=>g.nickname||g.goalText).length + '/10'},
+    {id:'quarters', label:'Quarters', count: '4'},
+    {id:'months', label:'Months', count: '12'},
+    {id:'weekly', label:'Weekly', count: state.weeks.filter(w=>w.done).length + '/52'},
+  ];
+  nav.innerHTML = tabs.map(t=>`
+    <button data-tab="${t.id}" class="${view.tab===t.id?'active':''}">
+      <span>${t.label}</span>${t.count?`<span class="count">${t.count}</span>`:''}
+    </button>`).join('');
+  nav.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ view = {tab:b.dataset.tab, index:0}; render(); });
+  });
+
+  const sub = document.getElementById('substrip');
+  sub.className = 'substrip' + (view.tab==='months' ? ' months' : (view.tab==='weekly' ? ' weeks' : ''));
+  if(view.tab==='goals'){
+    sub.innerHTML = state.goals.map((g,i)=>{
+      const filled = g.nickname || g.goalText;
+      return `<button data-i="${i}" class="${view.index===i?'active':''}" style="${filled?'font-weight:700;':''}">${i+1}</button>`;
+    }).join('');
+  } else if(view.tab==='quarters'){
+    sub.innerHTML = QUARTERS.map((q,i)=>`<button data-i="${i}" class="${view.index===i?'active':''}">${q.label}</button>`).join('');
+  } else if(view.tab==='months'){
+    sub.innerHTML = MONTHS.map((m,i)=>`<button data-i="${i}" class="${view.index===i?'active':''}">${m.name.slice(0,3)}</button>`).join('');
+  } else if(view.tab==='weekly'){
+    sub.innerHTML = WEEKS.map((w,i)=>`<button data-i="${i}" class="${view.index===i?'active':''}">W${w.num}</button>`).join('');
+  } else {
+    sub.innerHTML = '';
+  }
+  sub.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ view.index = parseInt(b.dataset.i,10); render(); });
+  });
+}
+
+function renderHeader(){
+  const eyebrow = document.getElementById('pg-eyebrow');
+  const title = document.getElementById('pg-title');
+  if(view.tab==='overview'){
+    eyebrow.textContent = 'Overview';
+    title.textContent = 'Your year, planned';
+  } else if(view.tab==='goals'){
+    eyebrow.textContent = `Goal ${view.index+1} of 10 · Deep-dive`;
+    title.textContent = state.goals[view.index].nickname || 'Untitled goal';
+  } else if(view.tab==='quarters'){
+    const q = QUARTERS[view.index];
+    eyebrow.textContent = 'Quarterly checkpoint';
+    title.textContent = `${q.label} review & planning`;
+  } else if(view.tab==='months'){
+    const m = MONTHS[view.index];
+    eyebrow.textContent = `${QUARTERS[m.q].label} · Monthly spread`;
+    title.textContent = m.name;
+  } else if(view.tab==='weekly'){
+    const w = WEEKS[view.index];
+    eyebrow.textContent = `${MONTHS[w.month].name} · Week ${w.weekInMonth} of that month`;
+    title.textContent = `Week ${w.num}`;
+  }
+}
+
+function currentMonthIndex(){
+  const name = new Date().toLocaleString('en-US', {month:'long'});
+  const idx = MONTHS.findIndex(m=>m.name===name);
+  return idx === -1 ? null : idx;
+}
+function currentWeekIndex(){
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((now - start) / 86400000);
+  const weekOfYear = Math.floor(dayOfYear / 7);
+  return weekOfYear % WEEKS.length;
+}
+
+function nextDeadline(){
+  const today = new Date().toISOString().slice(0,10);
+  const withDates = state.goals
+    .map((g,i)=>({i, g, d: g.deadline}))
+    .filter(x=>x.d && x.d >= today)
+    .sort((a,b)=> a.d < b.d ? -1 : 1);
+  return withDates[0] || null;
+}
+
+function renderOverview(){
+  const totalSteps = state.goals.reduce((a,g)=>a+g.steps.filter(s=>s.done).length,0);
+  const totalPossibleSteps = state.goals.length * 8;
+  const goalsStarted = state.goals.filter(g=>g.nickname || g.goalText).length;
+  const habitChecks = state.months.reduce((a,m)=>a + m.habits.reduce((b,h)=>b + h.days.filter(Boolean).length,0),0);
+  const monthsTouched = state.months.filter(m=>m.priorities.some(p=>p.text) || m.notes || m.habits.some(h=>h.name)).length;
+
+  // overall progress ring: blend of goal-steps, weekly follow-through, and monthly priorities
+  const weeksTotal = state.goals.length * 12;
+  const weeksDone = state.goals.reduce((a,g)=>a+g.weeks.filter(w=>w.done).length,0);
+  const prioritiesTotal = state.months.length * 5;
+  const prioritiesDone = state.months.reduce((a,m)=>a+m.priorities.filter(p=>p.done).length,0);
+  const weeklyTotal = state.weeks.length * 4;
+  const weeklyDone = state.weeks.reduce((a,w)=>a + w.top3.filter(p=>p.done).length + (w.done?1:0), 0);
+  const trackedTotal = totalPossibleSteps + weeksTotal + prioritiesTotal + weeklyTotal;
+  const trackedDone = totalSteps + weeksDone + prioritiesDone + weeklyDone;
+  const overallPct = trackedTotal ? Math.round((trackedDone/trackedTotal)*100) : 0;
+
+  const yearLabel = state.year ? esc(state.year) : 'your year';
+  let html = `<div class="hero">
+    <div class="ring" style="--pct:${overallPct}"><div class="ring-inner"><div class="pct">${overallPct}%</div><div class="pct-lbl">ON TRACK</div></div></div>
+    <div class="hero-text">
+      <div class="hero-kicker">Planning ${yearLabel}</div>
+      <h2>You've completed ${trackedDone} of ${trackedTotal} planned actions</h2>
+      <p>${goalsStarted}/10 goals defined · ${monthsTouched}/12 months planned · ${state.weeks.filter(w=>w.done).length}/52 weeks won · ${habitChecks} habit check-ins logged</p>
+    </div>
+  </div>`;
+
+  const curIdx = currentMonthIndex();
+  if(curIdx !== null){
+    const cm = state.months[curIdx];
+    const cmDone = cm.priorities.filter(p=>p.done).length;
+    html += `<button class="today-card" data-nav="months" data-i="${curIdx}" style="width:100%;">
+      <span class="tc-badge">THIS MONTH</span>
+      <div class="tc-body">
+        <div class="tc-title">${MONTHS[curIdx].name} — ${cmDone}/5 priorities done</div>
+        <div class="tc-sub">Open this month's spread to log habits, budget and priorities</div>
+      </div>
+      <span class="tc-arrow">→</span>
+    </button>`;
+  }
+  const curWeekIdx = currentWeekIndex();
+  if(curWeekIdx !== null){
+    const cw = state.weeks[curWeekIdx];
+    const cwDone = cw.top3.filter(p=>p.done).length;
+    html += `<button class="today-card" data-nav="weekly" data-i="${curWeekIdx}" style="width:100%;">
+      <span class="tc-badge" style="background:var(--moss);">THIS WEEK</span>
+      <div class="tc-body">
+        <div class="tc-title">Week ${WEEKS[curWeekIdx].num} — ${cwDone}/3 priorities done</div>
+        <div class="tc-sub">Set your top 3 for the week and jot notes as you go</div>
+      </div>
+      <span class="tc-arrow">→</span>
+    </button>`;
+  }
+  const nd = nextDeadline();
+  if(nd){
+    html += `<button class="today-card" data-nav="goals" data-i="${nd.i}" style="width:100%;">
+      <span class="tc-badge" style="background:var(--cobalt);">NEXT DEADLINE</span>
+      <div class="tc-body">
+        <div class="tc-title">${esc(nd.g.nickname || 'Goal ' + (nd.i+1))} — due ${esc(nd.d)}</div>
+        <div class="tc-sub">${nd.g.steps.filter(s=>s.done).length}/8 action steps completed</div>
+      </div>
+      <span class="tc-arrow">→</span>
+    </button>`;
+  }
+
+  html += `<section class="block"><h3>10 goals</h3><p class="hint">Tap a goal to open its full deep-dive.</p><div class="grid-cards">`;
+  state.goals.forEach((g,i)=>{
+    const done = g.steps.filter(s=>s.done).length;
+    const pct = Math.round((done/8)*100);
+    html += `<button class="goal-card" data-nav="goals" data-i="${i}">
+      <div class="ring-sm" style="--pct:${pct}"><div class="ring-sm-inner">${done}/8</div></div>
+      <div class="gc-body">
+        <div class="mc-title">${i+1}. ${g.nickname ? esc(g.nickname) : '<span style=\"color:var(--muted);font-weight:400;\">Not started</span>'}</div>
+        <div class="mc-sub">${g.deadline ? 'Due ' + esc(g.deadline) : 'No deadline set'}</div>
+      </div>
+    </button>`;
+  });
+  html += `</div></section>`;
+
+  html += `<section class="block"><h3>Quarters</h3><div class="quarter-strip">`;
+  QUARTERS.forEach((q,i)=>{
+    const qs = state.quarters[i];
+    const goalSlots = qs.businessGoals.length + qs.personalGoals.length;
+    const goalDone = qs.businessGoals.filter(x=>x.done).length + qs.personalGoals.filter(x=>x.done).length;
+    const pct = goalSlots ? Math.round((goalDone/goalSlots)*100) : 0;
+    html += `<button class="quarter-card" data-nav="quarters" data-i="${i}">
+      <div class="q-label">${q.label}</div>
+      <div class="q-focus">${esc(q.focus)}</div>
+      <div class="progress-bar"><span style="width:${pct}%"></span></div>
+    </button>`;
+  });
+  html += `</div></section>`;
+
+  const maxHabitChecks = Math.max(1, ...state.months.map(m=>m.habits.reduce((b,h)=>b+h.days.filter(Boolean).length,0)));
+  html += `<section class="block"><h3>Months</h3><p class="hint">Shaded by how much habit tracking you've logged that month.</p><div class="heatmap">`;
+  MONTHS.forEach((m,i)=>{
+    const ms = state.months[i];
+    const checks = ms.habits.reduce((b,h)=>b+h.days.filter(Boolean).length,0);
+    const intensity = checks / maxHabitChecks; // 0..1
+    const bg = intensity === 0 ? 'var(--sand)' : `rgba(63,125,92,${0.35 + intensity*0.65})`;
+    const textColor = intensity > 0.3 ? '#fff' : 'var(--ink-text)';
+    html += `<button class="heat-tile" data-nav="months" data-i="${i}" style="background:${bg};color:${textColor};">
+      <div class="ht-name">${m.name}</div>
+      <div class="ht-sub">${checks} check-ins</div>
+    </button>`;
+  });
+  html += `</div></section>`;
+
+  return html;
+}
+
+function renderGoal(i){
+  const g = state.goals[i];
+  const base = `goals.${i}`;
+  let html = `<section class="block">
+    <div class="two-col">
+      ${fieldBlock('Priority # (of 10)', `<input class="f-input" value="${i+1} of 10" disabled>`)}
+      ${fieldBlock('Goal nickname', fInput(base+'.nickname', g.nickname, 'A short name for this goal'))}
+    </div>
+    ${fieldBlock('Write it down — what is this goal, exactly?', fTextarea(base+'.goalText', g.goalText, '', 2))}
+    <div class="two-col">
+      ${fieldBlock('Deadline', fInput(base+'.deadline', g.deadline, '', 'date'))}
+      ${fieldBlock('Why this deadline', fInput(base+'.why', g.why, ''))}
+    </div>
+  </section>`;
+
+  html += `<section class="block">
+    <h3>Action plan — the steps, with real dates</h3>
+    <p class="hint">Break the goal into concrete steps. Give each one a start date, a target date, and check it off when done.</p>
+    <div class="table-scroll"><table class="plan-table" style="min-width:520px;"><thead><tr><th>#</th><th>Action step</th><th>Start date</th><th>Target date</th><th>Done</th></tr></thead><tbody>`;
+  g.steps.forEach((s,si)=>{
+    const sb = `${base}.steps.${si}`;
+    html += `<tr>
+      <td class="idx">${si+1}</td>
+      <td class="step-col">${fInput(sb+'.step', s.step, '')}</td>
+      <td>${fInput(sb+'.start', s.start, '', 'date')}</td>
+      <td>${fInput(sb+'.target', s.target, '', 'date')}</td>
+      <td class="chk">${fCheck(sb+'.done', s.done)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>
+    <div class="callout">${fieldBlock('My first action (take this within the next 7 days)', fInput(base+'.firstAction', g.firstAction, ''))}</div>
+  </section>`;
+
+  html += `<section class="block"><h3>Weekly follow-through — do something every week</h3>
+    <div class="week-grid">`;
+  g.weeks.forEach((w,wi)=>{
+    const wb = `${base}.weeks.${wi}`;
+    html += `<div class="week-cell">
+      <div class="checkline">${fCheck(wb+'.done', w.done)}<strong>Wk ${wi+1}</strong></div>
+      ${fInput(wb+'.note', w.note, 'what did you do?')}
+    </div>`;
+  });
+  html += `</div></section>`;
+  return html;
+}
+
+function renderQuarter(i){
+  const q = state.quarters[i];
+  const meta = QUARTERS[i];
+  const base = `quarters.${i}`;
+  let html = `<section class="block">
+    ${fieldBlock('Focus — months', `<input class="f-input" value="${esc(meta.focus)}" disabled>`)}
+    <div class="two-col">
+      <div>
+        <label class="field-label">Business goals this quarter</label>
+        ${q.businessGoals.map((bg,bi)=>`<div class="checkline">${fCheck(base+'.businessGoals.'+bi+'.done', bg.done)}${fInput(base+'.businessGoals.'+bi+'.text', bg.text, '')}</div>`).join('')}
+      </div>
+      <div>
+        <label class="field-label">Personal goals this quarter</label>
+        ${q.personalGoals.map((pg,pi)=>`<div class="checkline">${fCheck(base+'.personalGoals.'+pi+'.done', pg.done)}${fInput(base+'.personalGoals.'+pi+'.text', pg.text, '')}</div>`).join('')}
+      </div>
+    </div>
+  </section>`;
+
+  html += `<section class="block"><h3>Budget snapshot for the quarter</h3>
+    <div class="table-scroll"><table class="plan-table" style="min-width:400px;"><thead><tr><th>Category</th><th>Planned</th><th>Actual</th></tr></thead><tbody>`;
+  q.budget.forEach((row,ri)=>{
+    const rb = `${base}.budget.${ri}`;
+    html += `<tr><td>${fInput(rb+'.category', row.category,'')}</td><td>${fInput(rb+'.planned', row.planned,'')}</td><td>${fInput(rb+'.actual', row.actual,'')}</td></tr>`;
+  });
+  html += `</tbody></table></div></section>`;
+
+  html += `<section class="block">
+    ${fieldBlock("What worked / what didn't last quarter", fTextarea(base+'.worked', q.worked, '', 3))}
+    ${fieldBlock('One thing I\'ll change going into this quarter', fTextarea(base+'.change', q.change, '', 2))}
+  </section>`;
+  return html;
+}
+
+function renderMonth(i){
+  const m = state.months[i];
+  const meta = MONTHS[i];
+  const base = `months.${i}`;
+  let html = `<div class="two-col">
+    <section class="block"><h3>This month's priorities</h3>
+      ${m.priorities.map((p,pi)=>`<div class="checkline">${fCheck(base+'.priorities.'+pi+'.done', p.done)}${fInput(base+'.priorities.'+pi+'.text', p.text, '')}</div>`).join('')}
+    </section>
+    <section class="block"><h3>Budget tracker</h3>
+      <div class="table-scroll"><table class="plan-table" style="min-width:340px;"><thead><tr><th>Category</th><th>Budget</th><th>Spent</th></tr></thead><tbody>
+      ${m.budget.map((row,ri)=>{
+        const rb=`${base}.budget.${ri}`;
+        return `<tr><td>${fInput(rb+'.category', row.category,'')}</td><td>${fInput(rb+'.budget', row.budget,'')}</td><td>${fInput(rb+'.spent', row.spent,'')}</td></tr>`;
+      }).join('')}
+      </tbody></table></div>
+    </section>
+  </div>`;
+
+  html += `<section class="block"><h3>Daily habit tracker</h3><p class="hint">Name up to 5 habits, then check off each day you did them.</p>
+    <div class="habit-wrap"><table class="habit-table"><thead><tr><th style="min-width:140px;text-align:left;padding-left:8px;">Habit</th>`;
+  for(let d=1; d<=meta.days; d++){ html += `<th>${d}</th>`; }
+  html += `</tr></thead><tbody>`;
+  m.habits.forEach((h,hi)=>{
+    const hb = `${base}.habits.${hi}`;
+    html += `<tr><td class="habit-name"><input class="f-input" data-path="${hb}.name" value="${esc(h.name)}" placeholder="Habit ${hi+1}"></td>`;
+    h.days.forEach((d,di)=>{
+      html += `<td>${fCheck(hb+'.days.'+di, d)}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div></section>`;
+
+  html += `<section class="block"><h3>Weekly breakdown</h3>
+    <div class="weeks-note-grid">`;
+  m.weeks.forEach((w,wi)=>{
+    html += `<div class="wk-box"><label class="field-label">Week ${wi+1}</label>${fTextarea(base+'.weeks.'+wi, w, '', 4)}</div>`;
+  });
+  html += `</div></section>`;
+
+  html += `<section class="block">${fieldBlock('Notes', fTextarea(base+'.notes', m.notes, '', 3))}</section>`;
+  return html;
+}
+
+function renderWeek(i){
+  const w = state.weeks[i];
+  const meta = WEEKS[i];
+  const base = `weeks.${i}`;
+  let html = `<section class="block">
+    ${fieldBlock('This week sits in', `<input class="f-input" value="${esc(MONTHS[meta.month].name)} — week ${meta.weekInMonth} of that month" disabled>`)}
+    <label class="field-label">Top 3 priorities for the week</label>
+    ${w.top3.map((p,pi)=>`<div class="checkline">${fCheck(base+'.top3.'+pi+'.done', p.done)}${fInput(base+'.top3.'+pi+'.text', p.text, `Priority ${pi+1}`)}</div>`).join('')}
+  </section>`;
+
+  html += `<section class="block">
+    ${fieldBlock("Notes — what happened this week", fTextarea(base+'.note', w.note, '', 4))}
+    <div class="checkline" style="margin-top:10px;">${fCheck(base+'.done', w.done)}<strong>Mark this week as a win</strong></div>
+  </section>`;
+  return html;
+}
+
+function render(){
+  renderNav();
+  renderHeader();
+  const content = document.getElementById('content');
+  if(view.tab==='overview') content.innerHTML = renderOverview();
+  else if(view.tab==='goals') content.innerHTML = renderGoal(view.index);
+  else if(view.tab==='quarters') content.innerHTML = renderQuarter(view.index);
+  else if(view.tab==='months') content.innerHTML = renderMonth(view.index);
+  else if(view.tab==='weekly') content.innerHTML = renderWeek(view.index);
+
+  // year field
+  const yearInput = document.getElementById('year-input');
+  yearInput.value = state.year;
+  yearInput.oninput = ()=>{ state.year = yearInput.value; scheduleSave(); };
+
+  // wire inputs
+  content.querySelectorAll('.f-input, .f-textarea').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      setPath(state, el.dataset.path, el.value);
+      scheduleSave();
+    });
+  });
+  content.querySelectorAll('.f-check').forEach(el=>{
+    el.addEventListener('change', ()=>{
+      setPath(state, el.dataset.path, el.checked);
+      scheduleSave();
+      if(el.checked) checkCompletion(el.dataset.path);
+      render();
+    });
+  });
+  content.querySelectorAll('[data-nav]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      view = {tab: el.dataset.nav, index: parseInt(el.dataset.i,10)};
+      render();
+      window.scrollTo(0,0);
+    });
+  });
+}
+
+/* ---------------- Export / Import / Reset ---------------- */
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'year-planner-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('btn-import').addEventListener('click', ()=>{
+  document.getElementById('file-import').click();
+});
+document.getElementById('file-import').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const loaded = JSON.parse(reader.result);
+      state = Object.assign(defaultState(), loaded);
+      scheduleSave();
+      render();
+    }catch(err){
+      alert('That file could not be read as a planner backup.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  if(confirm('This clears every goal, quarter and month you\'ve filled in. This cannot be undone. Continue?')){
+    state = defaultState();
+    scheduleSave();
+    render();
+  }
+});
+
+/* ---------------- Completion celebration ---------------- */
+const CONFETTI_COLORS = ['#E63950','#2C5AA0','#3F7D5C','#F4B740','#C42540'];
+function fireConfetti(container){
+  for(let i=0;i<28;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+    p.style.animationDuration = (0.9 + Math.random()*0.9) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    container.appendChild(p);
+    setTimeout(()=>{ if(p.parentNode) p.parentNode.removeChild(p); }, 2000);
+  }
+}
+function showCelebration(emoji, title, message){
+  const overlay = document.getElementById('celebrate-overlay');
+  document.getElementById('celebrate-emoji').textContent = emoji;
+  document.getElementById('celebrate-title').textContent = title;
+  document.getElementById('celebrate-message').textContent = message;
+  overlay.classList.remove('hidden');
+  fireConfetti(document.getElementById('celebrate-box'));
+}
+document.getElementById('celebrate-dismiss').addEventListener('click', ()=>{
+  document.getElementById('celebrate-overlay').classList.add('hidden');
+});
+document.getElementById('celebrate-overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'celebrate-overlay') e.currentTarget.classList.add('hidden');
+});
+
+function overallPercent(){
+  const totalSteps = state.goals.length * 8;
+  const doneSteps = state.goals.reduce((a,g)=>a+g.steps.filter(s=>s.done).length,0);
+  const weeksTotal = state.goals.length * 12;
+  const weeksDone = state.goals.reduce((a,g)=>a+g.weeks.filter(w=>w.done).length,0);
+  const prioritiesTotal = state.months.length * 5;
+  const prioritiesDone = state.months.reduce((a,m)=>a+m.priorities.filter(p=>p.done).length,0);
+  const weeklyTotal = state.weeks.length * 4;
+  const weeklyDone = state.weeks.reduce((a,w)=>a + w.top3.filter(p=>p.done).length + (w.done?1:0), 0);
+  const total = totalSteps + weeksTotal + prioritiesTotal + weeklyTotal;
+  const done = doneSteps + weeksDone + prioritiesDone + weeklyDone;
+  return total ? Math.round((done/total)*100) : 0;
+}
+
+function checkCompletion(path){
+  const parts = path.split('.');
+  let specific = null;
+
+  if(parts[0]==='goals'){
+    const gi = parseInt(parts[1],10);
+    const g = state.goals[gi];
+    const name = g.nickname || ('Goal ' + (gi+1));
+    if(parts[2]==='steps' && g.steps.every(s=>s.done)){
+      specific = {emoji:'🏁', title:'Goal steps complete!', message:`Every action step for "${name}" is done. Time to lock in the win.`};
+    } else if(parts[2]==='weeks' && g.weeks.every(w=>w.done)){
+      specific = {emoji:'🔥', title:'12 for 12!', message:`You showed up every week for "${name}". That's real follow-through.`};
+    }
+  } else if(parts[0]==='months'){
+    const mi = parseInt(parts[1],10);
+    const m = state.months[mi];
+    if(parts[2]==='priorities' && m.priorities.every(p=>p.done)){
+      specific = {emoji:'✅', title:`${MONTHS[mi].name} nailed it`, message:`All 5 priorities for ${MONTHS[mi].name} are checked off.`};
+    }
+  } else if(parts[0]==='quarters'){
+    const qi = parseInt(parts[1],10);
+    const q = state.quarters[qi];
+    if((parts[2]==='businessGoals' || parts[2]==='personalGoals') && q.businessGoals.every(x=>x.done) && q.personalGoals.every(x=>x.done)){
+      specific = {emoji:'🏆', title:`${QUARTERS[qi].label} complete`, message:`Every business and personal goal for ${QUARTERS[qi].label} is done.`};
+    }
+  } else if(parts[0]==='weeks'){
+    const wi = parseInt(parts[1],10);
+    const w = state.weeks[wi];
+    if((parts[2]==='top3' || parts[2]==='done') && w.top3.every(p=>p.done) && w.done){
+      specific = {emoji:'⭐', title:`Week ${WEEKS[wi].num} in the books`, message:'Top priorities done and marked as a win. Keep the streak going.'};
+    }
+  }
+
+  if(overallPercent() === 100){
+    showCelebration('🎊', 'You planned your whole year!', 'Every tracked goal, quarter, month and week is complete. That is an incredible amount of follow-through.');
+  } else if(specific){
+    showCelebration(specific.emoji, specific.title, specific.message);
+  }
+}
+
+loadState();
+</script>
+</body>
+</html>
